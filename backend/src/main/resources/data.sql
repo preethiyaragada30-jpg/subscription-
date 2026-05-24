@@ -1,0 +1,2 @@
+-- Reference seed script (automatic seeding uses config/DataInitializer.java)
+-- Admin: admin@example.com / admin123

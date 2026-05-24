@@ -1,0 +1,117 @@
+{
+  "info": {
+    "name": "Subscription Manager API",
+    "description": "Subscription Manager with Churn Prediction",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\",\n  \"phoneNumber\": \"9999999999\",\n  \"age\": 25\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Frontend Legacy Users",
+      "item": [
+        {
+          "name": "Login (frontend)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/users/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get User",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/users/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "List Payments",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/payments" }
+        },
+        {
+          "name": "Create Payment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/payments",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"Test User\",\n  \"amount\": 29.99,\n  \"method\": \"Credit/Debit Card\",\n  \"date\": \"2025-01-20\",\n  \"status\": \"Completed\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Stats",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/dashboard/stats" }
+        }
+      ]
+    },
+    {
+      "name": "Churn",
+      "item": [
+        {
+          "name": "Predict",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/churn/predict",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": 3,\n  \"missedPayments\": 3,\n  \"usageFrequency\": 20,\n  \"lastLoginDays\": 35,\n  \"supportTickets\": 4,\n  \"subscriptionDuration\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "High Risk",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/churn/high-risk" }
+        }
+      ]
+    }
+  ]
+}

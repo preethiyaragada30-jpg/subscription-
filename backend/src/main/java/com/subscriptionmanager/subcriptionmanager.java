@@ -1,0 +1,1 @@
+// This file was emptied to resolve duplicate SubscriptionManagerApplication class compilation error.
