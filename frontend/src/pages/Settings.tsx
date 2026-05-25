@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import api from "../services/api";
 import { Sun, Globe, Bell } from "lucide-react";
 
 type ToggleItemProps = {
@@ -33,12 +34,62 @@ const ToggleItem = ({
 };
 
 const SettingsPage: React.FC<{ searchQuery?: string }> = ({ searchQuery = "" }) => {
+  const [currentUser] = useState<any>(() => {
+    const stored = localStorage.getItem("currentUser");
+    return stored ? JSON.parse(stored) : null;
+  });
+
   const [pushNotifications, setPushNotifications] = useState(true);
   const [emailUpdates, setEmailUpdates] = useState(true);
   const [smsWarnings, setSmsWarnings] = useState(false);
+  const [language, setLanguage] = useState("English (US)");
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return typeof document !== "undefined" && document.documentElement.classList.contains("dark");
   });
+
+  useEffect(() => {
+    if (!currentUser || !currentUser.id) return;
+    const fetchSettings = async () => {
+      try {
+        const res = await api.get(`/api/settings/user/${currentUser.id}`);
+        if (res.data && res.data.success && res.data.data) {
+          const s = res.data.data;
+          if (s.darkMode !== undefined) {
+            setIsDarkMode(s.darkMode);
+            if (s.darkMode) {
+              document.documentElement.classList.add("dark");
+            } else {
+              document.documentElement.classList.remove("dark");
+            }
+          }
+          if (s.emailNotifications !== undefined) {
+            setEmailUpdates(s.emailNotifications);
+          }
+          if (s.language !== undefined) {
+            setLanguage(s.language);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching settings:", err);
+      }
+    };
+    fetchSettings();
+  }, [currentUser]);
+
+  const updateSettings = async (updates: { darkMode?: boolean; emailNotifications?: boolean; language?: string }) => {
+    if (!currentUser || !currentUser.id) return;
+    try {
+      const payload = {
+        darkMode: updates.darkMode !== undefined ? updates.darkMode : isDarkMode,
+        emailNotifications: updates.emailNotifications !== undefined ? updates.emailNotifications : emailUpdates,
+        language: updates.language !== undefined ? updates.language : language,
+        timezone: "UTC"
+      };
+      await api.put(`/api/settings/user/${currentUser.id}`, payload);
+    } catch (err) {
+      console.error("Error updating settings:", err);
+    }
+  };
 
   const toggleTheme = () => {
     const nextDark = !isDarkMode;
@@ -50,6 +101,7 @@ const SettingsPage: React.FC<{ searchQuery?: string }> = ({ searchQuery = "" }) 
       document.documentElement.classList.remove("dark");
       localStorage.setItem("theme", "light");
     }
+    updateSettings({ darkMode: nextDark });
     alert(`Successfully toggled to ${nextDark ? "Dark Theme" : "Light Theme"}!`);
   };
 
@@ -99,7 +151,15 @@ const SettingsPage: React.FC<{ searchQuery?: string }> = ({ searchQuery = "" }) 
             </h2>
           </div>
 
-          <select className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none text-gray-600 text-sm bg-slate-50 border-none focus:ring-2 focus:ring-purple-100 transition-all">
+          <select 
+            value={language}
+            onChange={(e) => {
+              const val = e.target.value;
+              setLanguage(val);
+              updateSettings({ language: val });
+            }}
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none text-gray-600 text-sm bg-slate-50 border-none focus:ring-2 focus:ring-purple-100 transition-all"
+          >
             <option>English (US)</option>
             <option>English (UK)</option>
             <option>Hindi</option>
@@ -129,7 +189,11 @@ const SettingsPage: React.FC<{ searchQuery?: string }> = ({ searchQuery = "" }) 
             <ToggleItem
               label="Receive email billing updates & reports"
               enabled={emailUpdates}
-              onToggle={() => setEmailUpdates(!emailUpdates)}
+              onToggle={() => {
+                const nextVal = !emailUpdates;
+                setEmailUpdates(nextVal);
+                updateSettings({ emailNotifications: nextVal });
+              }}
             />
 
             <ToggleItem

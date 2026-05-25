@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Check, AlertTriangle, Wallet, Bell, TrendingDown, UserPlus } from "lucide-react";
+import api from "../services/api";
 
 type NotificationProps = {
   id: number;
@@ -54,50 +55,72 @@ const NotificationItem = ({
 };
 
 const NotificationsPage: React.FC<{ searchQuery?: string }> = ({ searchQuery = "" }) => {
-  const [list, setList] = useState([
-    {
-      id: 1,
-      title: "Payment Successful",
-      description: "Your Professional plan payment of $29.99 was successful.",
-      time: "2h ago",
-      icon: <Wallet size={18} />,
-    },
-    {
-      id: 2,
-      title: "Renewal Reminder",
-      description: "Your Basic plan expires in 5 days. Please renew.",
-      time: "4h ago",
-      icon: <Bell size={18} />,
-    },
-    {
-      id: 3,
-      title: "High Churn Risk",
-      description: "Kiran Verma is at high churn risk. Take action now.",
-      time: "6h ago",
-      icon: <TrendingDown size={18} />,
-    },
-    {
-      id: 4,
-      title: "Payment Failed",
-      description: "Payment of $9.99 failed for Kiran Verma.",
-      time: "1d ago",
-      icon: <AlertTriangle size={18} />,
-    },
-    {
-      id: 5,
-      title: "New User Registered",
-      description: "Neha Sharma signed up for the Basic plan.",
-      time: "2d ago",
-      icon: <UserPlus size={18} />,
-    },
-  ]);
+  const [currentUser] = useState<any>(() => {
+    const stored = localStorage.getItem("currentUser");
+    return stored ? JSON.parse(stored) : null;
+  });
+  const [list, setList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleMarkRead = (id: number) => {
-    setList(prev => prev.filter(item => item.id !== id));
+  useEffect(() => {
+    if (!currentUser || !currentUser.id) {
+      setLoading(false);
+      return;
+    }
+    const fetchNotifications = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get(`/api/notifications/user/${currentUser.id}`);
+        if (res.data && res.data.success && Array.isArray(res.data.data)) {
+          const unread = res.data.data.filter((n: any) => !n.isRead).map((n: any) => {
+            let iconType = <Bell size={18} />;
+            if (n.notificationType === "PAYMENT") iconType = <Wallet size={18} />;
+            else if (n.notificationType === "CHURN") iconType = <TrendingDown size={18} />;
+            else if (n.notificationType === "RENEWAL") iconType = <Bell size={18} />;
+            
+            return {
+              id: n.id,
+              title: n.title,
+              description: n.message,
+              time: n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Just now",
+              icon: iconType
+            };
+          });
+          setList(unread);
+        }
+      } catch (err) {
+        console.warn("Backend down. Using mock notifications.");
+        setList([
+          { id: 1, title: "Payment Successful", description: "Your Professional plan payment of $29.99 was successful.", time: "2h ago", icon: <Wallet size={18} /> },
+          { id: 2, title: "Renewal Reminder", description: "Your Basic plan expires in 5 days. Please renew.", time: "4h ago", icon: <Bell size={18} /> },
+          { id: 3, title: "High Churn Risk", description: "Kiran Verma is at high churn risk. Take action now.", time: "6h ago", icon: <TrendingDown size={18} /> },
+          { id: 4, title: "Payment Failed", description: "Payment of $9.99 failed for Kiran Verma.", time: "1d ago", icon: <AlertTriangle size={18} /> },
+          { id: 5, title: "New User Registered", description: "Neha Sharma signed up for the Basic plan.", time: "2d ago", icon: <UserPlus size={18} /> }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNotifications();
+  }, [currentUser]);
+
+  const handleMarkRead = async (id: number) => {
+    try {
+      await api.patch(`/api/notifications/${id}/read`);
+      setList(prev => prev.filter(item => item.id !== id));
+    } catch (err) {
+      console.warn("Failed to mark as read on backend, marking locally.");
+      setList(prev => prev.filter(item => item.id !== id));
+    }
   };
 
-  const handleMarkAllRead = () => {
-    setList([]);
+  const handleMarkAllRead = async () => {
+    try {
+      await Promise.all(list.map(item => api.patch(`/api/notifications/${item.id}/read`).catch(() => {})));
+      setList([]);
+    } catch (err) {
+      setList([]);
+    }
   };
 
   return (

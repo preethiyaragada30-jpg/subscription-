@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Puzzle, CheckCircle2, Eye, EyeOff, Save } from "lucide-react";
+import api from "../services/api";
 
 type IntegrationCardProps = {
   name: string;
@@ -16,6 +17,36 @@ const IntegrationCard = ({
 }: IntegrationCardProps) => {
   const [status, setStatus] = useState(initialStatus);
   const [showKey, setShowKey] = useState(false);
+  const [testing, setTesting] = useState(false);
+
+  useEffect(() => {
+    setStatus(initialStatus);
+  }, [initialStatus]);
+
+  const testConnection = async () => {
+    let endpoint = "";
+    if (name === "Stripe") endpoint = "/api/integrations/stripe/test";
+    else if (name === "Razorpay") endpoint = "/api/integrations/razorpay/test";
+    else if (name === "PayPal") endpoint = "/api/integrations/paypal/test";
+    else {
+      alert(`${name} integration configuration details saved successfully!`);
+      return;
+    }
+
+    try {
+      setTesting(true);
+      const res = await api.post(endpoint);
+      if (res.data && res.data.success) {
+        alert(`${name} test successful: ${res.data.data.message}`);
+      } else {
+        alert(`${name} test failed: ${res.data?.data?.message || "unreachable"}`);
+      }
+    } catch (err) {
+      alert(`Error testing ${name} integration connection.`);
+    } finally {
+      setTesting(false);
+    }
+  };
 
   const toggleStatus = () => {
     const nextStatus = status === "active" ? "inactive" : "active";
@@ -88,11 +119,16 @@ const IntegrationCard = ({
       {/* Buttons */}
       <div className="flex gap-4 mt-6 border-t border-gray-50 pt-6">
         <button 
-          onClick={() => alert(`${name} integration configuration details saved successfully!`)}
-          className="flex-1 bg-gradient-to-r from-pink-500 to-rose-600 hover:shadow-md hover:shadow-pink-500/20 transition-all text-white py-2.5 rounded-xl flex items-center justify-center gap-2 font-bold text-xs"
+          onClick={testConnection}
+          disabled={testing}
+          className="flex-1 bg-gradient-to-r from-pink-500 to-rose-600 hover:shadow-md hover:shadow-pink-500/20 transition-all text-white py-2.5 rounded-xl flex items-center justify-center gap-2 font-bold text-xs disabled:opacity-50"
         >
-          <Save size={14} />
-          Save Config
+          {testing ? (
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <Save size={14} />
+          )}
+          {testing ? "Testing..." : "Test Connection"}
         </button>
 
         <button 
@@ -107,32 +143,55 @@ const IntegrationCard = ({
 };
 
 const IntegrationsPage: React.FC = () => {
-  const integrations = [
-    {
-      name: "Razorpay",
-      description: "Payment gateway for Indian market integration",
-      status: "active",
-      button: "Disable",
-    },
-    {
-      name: "Stripe",
-      description: "Global payment processing and billing synchronization",
-      status: "inactive",
-      button: "Enable",
-    },
-    {
-      name: "SendGrid",
-      description: "Transactional email service and notification outreach",
-      status: "active",
-      button: "Disable",
-    },
-    {
-      name: "Twilio",
-      description: "SMS alerts, customer warning messages, and notifications",
-      status: "inactive",
-      button: "Enable",
-    },
-  ];
+  const [integrations, setIntegrations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get("/api/integrations");
+        if (res.data && res.data.success && Array.isArray(res.data.data)) {
+          const list = res.data.data.map((item: any) => {
+            let name = item.provider;
+            let description = "";
+            if (name === "Stripe") description = "Global payment processing and billing synchronization";
+            else if (name === "Razorpay") description = "Payment gateway for Indian market integration";
+            else if (name === "PayPal") description = "International peer-to-peer money transfers and invoicing";
+            else if (name === "Email") {
+              name = "SendGrid";
+              description = "Transactional email service and notification outreach";
+            }
+            return {
+              name,
+              description,
+              status: item.connected ? "active" : "inactive",
+              button: item.connected ? "Disable" : "Enable"
+            };
+          });
+          // Add Twilio manually since it's only in frontend UI
+          list.push({
+            name: "Twilio",
+            description: "SMS alerts, customer warning messages, and notifications",
+            status: "inactive",
+            button: "Enable"
+          });
+          setIntegrations(list);
+        }
+      } catch (err) {
+        console.warn("Backend down, using mock integrations");
+        setIntegrations([
+          { name: "Razorpay", description: "Payment gateway for Indian market integration", status: "active", button: "Disable" },
+          { name: "Stripe", description: "Global payment processing and billing synchronization", status: "inactive", button: "Enable" },
+          { name: "SendGrid", description: "Transactional email service and notification outreach", status: "active", button: "Disable" },
+          { name: "Twilio", description: "SMS alerts, customer warning messages, and notifications", status: "inactive", button: "Enable" },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStatus();
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -148,17 +207,24 @@ const IntegrationsPage: React.FC = () => {
       </div>
 
       {/* Integrations Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {integrations.map((item, index) => (
-          <IntegrationCard
-            key={index}
-            name={item.name}
-            description={item.description}
-            initialStatus={item.status}
-            buttonText={item.button}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="text-center py-12 text-gray-400">
+          <div className="w-8 h-8 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          Loading connection statuses...
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {integrations.map((item, index) => (
+            <IntegrationCard
+              key={index}
+              name={item.name}
+              description={item.description}
+              initialStatus={item.status}
+              buttonText={item.button}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

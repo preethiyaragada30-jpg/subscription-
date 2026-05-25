@@ -24,6 +24,7 @@ public class UserResponse {
     private String activePlan;
     private Long activeSubscriptionId;
     private String password;
+    private String token;
 
     public static UserResponse fromEntity(User user) {
         String activePlan = null;

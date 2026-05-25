@@ -1,6 +1,18 @@
 import { DollarSign, AlertTriangle, TrendingUp, ArrowUpRight, BarChart3 } from "lucide-react";
 
-const KpiCards = () => {
+const KpiCards = ({ stats }: { stats?: any }) => {
+  const revenue = stats && stats.totalRevenue !== undefined && stats.totalRevenue !== null
+    ? `$${Number(stats.totalRevenue).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+    : "$128.4k";
+
+  const churn = stats && stats.churnRate !== undefined && stats.churnRate !== null
+    ? `${Number(stats.churnRate).toFixed(1)}%`
+    : "4.2%";
+
+  const mrr = stats && stats.monthlyRevenue !== undefined && stats.monthlyRevenue !== null
+    ? `$${Number(stats.monthlyRevenue).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+    : "$42.1k";
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
       {/* Revenue Health Card */}
@@ -12,7 +24,7 @@ const KpiCards = () => {
           <div>
             <p className="text-sm text-gray-500 font-medium mb-1">Revenue Health</p>
             <div className="flex items-center gap-2">
-              <h3 className="text-2xl font-bold text-gray-800">$128.4k</h3>
+              <h3 className="text-2xl font-bold text-gray-800">{revenue}</h3>
             </div>
             <p className="text-xs text-green-500 font-medium flex items-center mt-1">
               <ArrowUpRight size={14} className="mr-0.5" /> 3.2% 
@@ -36,7 +48,7 @@ const KpiCards = () => {
           <div>
             <p className="text-sm text-gray-500 font-medium mb-1">Churn Risk</p>
             <div className="flex items-center gap-2">
-              <h3 className="text-2xl font-bold text-gray-800">4.2%</h3>
+              <h3 className="text-2xl font-bold text-gray-800">{churn}</h3>
             </div>
             <p className="text-xs text-gray-500 mt-1">predicted 30d</p>
           </div>
@@ -57,7 +69,7 @@ const KpiCards = () => {
           <div>
             <p className="text-sm text-gray-500 font-medium mb-1">MRR</p>
             <div className="flex items-center gap-2">
-              <h3 className="text-2xl font-bold text-gray-800">$42.1k</h3>
+              <h3 className="text-2xl font-bold text-gray-800">{mrr}</h3>
             </div>
             <p className="text-xs text-gray-500 mt-1">Monthly Recurring Revenue</p>
           </div>

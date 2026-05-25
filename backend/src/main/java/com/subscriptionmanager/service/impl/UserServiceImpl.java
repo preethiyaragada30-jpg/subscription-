@@ -15,6 +15,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.subscriptionmanager.config.JwtService;
+import org.springframework.security.core.userdetails.UserDetailsService;
+
 import java.util.List;
 
 @Service
@@ -24,6 +27,8 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserSettingsRepository settingsRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private final UserDetailsService userDetailsService;
 
     @Override
     @Transactional(readOnly = true)
@@ -89,7 +94,13 @@ public class UserServiceImpl implements UserService {
                 .build();
         user = userRepository.save(user);
         settingsRepository.save(UserSettings.builder().user(user).build());
-        return UserResponse.fromEntity(user);
+        
+        var userDetails = userDetailsService.loadUserByUsername(user.getEmail());
+        String token = jwtService.generateToken(userDetails);
+        
+        UserResponse response = UserResponse.fromEntity(user);
+        response.setToken(token);
+        return response;
     }
 
     /** Frontend: POST /api/users/login - returns user object directly */
@@ -101,7 +112,13 @@ public class UserServiceImpl implements UserService {
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new UnauthorizedException("Invalid email or password");
         }
-        return UserResponse.fromEntity(user);
+        
+        var userDetails = userDetailsService.loadUserByUsername(user.getEmail());
+        String token = jwtService.generateToken(userDetails);
+        
+        UserResponse response = UserResponse.fromEntity(user);
+        response.setToken(token);
+        return response;
     }
 
     private User findUser(Long id) {
