@@ -1,11 +1,10 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import AppRoutes from "./routes/AppRoutes";
 import DashboardLayout from "../components/layout/Layout";
 
 import Dashboard from "../pages/Dashboard";
 import UserAccounts from "../pages/UserAccounts";
 import SubscriptionPlans from "../pages/SubscriptionPlans";
-import PaymentAlerts from "../pages/PaymentAlerts";
+import PaymentAlerts from "../pages/PaymentsAlerts";
 import ChurnPrediction from "../pages/ChurnPrediction";
 import AnalyticsReports from "../pages/AnalyticsReports";
 import Notifications from "../pages/Notifications";
@@ -13,11 +12,11 @@ import SavedReports from "../pages/SavedReports";
 import Integrations from "../pages/Integrations";
 import Settings from "../pages/Settings";
 
-const AppRoutes = () => {
+const AppRoutesComponent = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Layout />}>
+        <Route path="/" element={<DashboardLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="users" element={<UserAccounts />} />
           <Route path="plans" element={<SubscriptionPlans />} />
@@ -34,4 +33,4 @@ const AppRoutes = () => {
   );
 };
 
-export default AppRoutes;
+export default AppRoutesComponent;

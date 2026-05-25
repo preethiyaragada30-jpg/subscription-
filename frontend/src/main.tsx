@@ -20,7 +20,7 @@ if (typeof window !== "undefined" && window.Notification) {
 if (typeof navigator !== "undefined" && navigator.credentials) {
   const originalGet = navigator.credentials.get;
   navigator.credentials.get = function (options) {
-    if (options && (options.federated || options.password || options.publicKey)) {
+    if (options && ((options as any).federated || (options as any).password || options.publicKey)) {
       return Promise.resolve(null);
     }
     return originalGet.call(this, options);

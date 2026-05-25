@@ -54,12 +54,16 @@ const Header: React.FC<HeaderProps> = ({
           </span>
         </div>
         
-        <Settings 
+        <div 
           onClick={() => setActiveTab ? setActiveTab("settings") : console.log("Navigate to settings")}
-          size={20} 
-          className="text-gray-600 cursor-pointer hover:rotate-45 transition-transform duration-200" 
+          className="cursor-pointer hover:opacity-85 transition-opacity"
           title="Settings"
-        />
+        >
+          <Settings 
+            size={20} 
+            className="text-gray-600 hover:rotate-45 transition-transform duration-200" 
+          />
+        </div>
       </div>
     </header>
   );
